@@ -119,18 +119,78 @@ Even if you do not send `stream` or `enable_thinking`, the proxy will force both
 - This repo is not affiliated with OpenClaw, Alibaba Cloud, or Qwen
 - Best used on localhost or a trusted internal network
 
-## Publish to GitHub
+## Run as a service (Linux / systemd)
 
-Create a new repository, then run:
+You can run the proxy as a `systemd` service so it starts automatically on boot and restarts on failure.
+
+1. Create a service file (replace `/path/to/repo` and `youruser` with your actual values):
+
+```ini
+# /etc/systemd/system/openclaw-proxy.service
+[Unit]
+Description=OpenClaw Qwen Thinking Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/path/to/repo
+EnvironmentFile=-/path/to/repo/.env
+# .env must use KEY=VALUE lines (no `export`), e.g.:
+#   UPSTREAM_BASE_URL=https://coding-intl.dashscope.aliyuncs.com/v1
+#   HOST=127.0.0.1
+#   PORT=4000
+ExecStart=/path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Reload systemd and enable the service:
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPO_URL
-git push -u origin main
+sudo systemctl daemon-reload
+sudo systemctl enable openclaw-proxy
+sudo systemctl start openclaw-proxy
 ```
+
+3. Check the status:
+
+```bash
+sudo systemctl status openclaw-proxy
+```
+
+Logs are available via:
+
+```bash
+journalctl -u openclaw-proxy -f
+```
+
+## Schedule a daily restart with cron
+
+To restart the service every day at 2 am, add a cron entry to **root's crontab** (which does not require `sudo` inside the job itself):
+
+```bash
+sudo crontab -e
+```
+
+Add this line:
+
+```cron
+0 2 * * * systemctl restart openclaw-proxy
+```
+
+This triggers `systemctl restart openclaw-proxy` at 02:00 every day, which stops the current process and starts a fresh one.
+
+> **Tip:** If you are running the proxy without systemd (e.g. via a plain `uvicorn` invocation in a shell), you can use the cron approach below instead to kill and relaunch the process. Add this to the proxy-owning user's crontab (run `crontab -e` as that user, not as root), and replace `/path/to/repo` and `youruser` with your actual values:
+>
+> ```cron
+> 0 2 * * * pkill -u youruser -f "uvicorn main:app --host 127.0.0.1 --port 4000" ; sleep 2 ; cd /path/to/repo && /path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000 >> /home/youruser/logs/openclaw-proxy.log 2>&1 &
+> ```
+>
+> Make sure the log directory exists first: `mkdir -p /home/youruser/logs`
 
 ## License
 
