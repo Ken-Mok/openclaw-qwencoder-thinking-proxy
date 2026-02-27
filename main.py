@@ -65,6 +65,12 @@ async def passthrough(req: Request) -> StreamingResponse:
     body["stream"] = True
     body["enable_thinking"] = True
 
+    # Remap "developer" role to "system" for upstream compatibility.
+    if "messages" in body and isinstance(body["messages"], list):
+        for msg in body["messages"]:
+            if isinstance(msg, dict) and msg.get("role") == "developer":
+                msg["role"] = "system"
+
     patched_body = json.dumps(
         body,
         ensure_ascii=False,
