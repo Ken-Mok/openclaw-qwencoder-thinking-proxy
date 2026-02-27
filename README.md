@@ -88,7 +88,7 @@ This proxy only changes the request body enough to force `stream=true` and `enab
 
 ### Example OpenClaw configuration
 
-Below is a complete example of how to configure the `models` and `agents` sections in your OpenClaw settings to use this proxy with multiple providers:
+Below is a complete example of how to configure the `models` and `agents` sections in your OpenClaw settings to use this proxy with the `bailian` provider:
 
 ```json
 "models": {
