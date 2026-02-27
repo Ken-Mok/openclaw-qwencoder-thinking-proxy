@@ -134,7 +134,7 @@ git push -u origin main
 
 ## References
 
-- [Alibaba Cloud Model Studio – Qwen Coder API documentation](https://www.alibabacloud.com/help/en/model-studio)
+- [Alibaba Cloud Model Studio – Qwen Coder API documentation](https://modelstudio.console.alibabacloud.com/ap-southeast-1/?tab=doc#/doc/?type=model&url=3005961)
 
 ## License
 
