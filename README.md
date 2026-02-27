@@ -86,6 +86,138 @@ http://127.0.0.1:4000/v1
 
 This proxy only changes the request body enough to force `stream=true` and `enable_thinking=true`.
 
+### Example OpenClaw configuration
+
+Below is a complete example of how to configure the `models` and `agents` sections in your OpenClaw settings to use this proxy with the `bailian` provider:
+
+> **Note:** The proxy does not perform any model- or provider-specific routing.
+> All requests are forwarded to a single upstream OpenAI-compatible endpoint
+> (for example `https://coding-intl.dashscope.aliyuncs.com/v1`). Any models
+> you reference (including third-party models such as `MiniMax-M2.5`,
+> `glm-5`, `glm-4.7`, and `kimi-k2.5`) must already be supported by that
+> upstream service.
+
+```json
+{
+  "models": {
+    "mode": "replace",
+    "providers": {
+      "bailian": {
+        "baseUrl": "http://127.0.0.1:4000/v1",
+        "apiKey": "__OPENCLAW_REDACTED__",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "qwen3.5-plus",
+            "name": "qwen3.5-plus",
+            "api": "openai-completions",
+            "reasoning": true,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 65536
+          },
+          {
+            "id": "qwen3-max-2026-01-23",
+            "name": "qwen3-max-2026-01-23",
+            "api": "openai-completions",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 65536
+          },
+          {
+            "id": "qwen3-coder-next",
+            "name": "qwen3-coder-next",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 65536
+          },
+          {
+            "id": "qwen3-coder-plus",
+            "name": "qwen3-coder-plus",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 65536
+          },
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax-M2.5",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 65536
+          },
+          {
+            "id": "glm-5",
+            "name": "glm-5",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 202752,
+            "maxTokens": 16384
+          },
+          {
+            "id": "glm-4.7",
+            "name": "glm-4.7",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 202752,
+            "maxTokens": 16384
+          },
+          {
+            "id": "kimi-k2.5",
+            "name": "kimi-k2.5",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 262144,
+            "maxTokens": 32768
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "bailian/qwen3-max-2026-01-23",
+        "fallbacks": [
+          "bailian/glm-5",
+          "bailian/kimi-k2.5"
+        ]
+      },
+      "imageModel": {
+        "primary": "bailian/qwen3.5-plus"
+      },
+      "models": {
+        "bailian/qwen3.5-plus": {},
+        "bailian/qwen3-max-2026-01-23": {},
+        "bailian/qwen3-coder-next": {},
+        "bailian/qwen3-coder-plus": {},
+        "bailian/MiniMax-M2.5": {},
+        "bailian/glm-5": {},
+        "bailian/glm-4.7": {},
+        "bailian/kimi-k2.5": {}
+      }
+    }
+  }
+}
+```
+
 ## Behavior notes
 
 Because the proxy modifies the JSON body, it cannot preserve the original `Content-Length` header. That header is removed and recalculated by the HTTP client. This is normal and required.
@@ -119,18 +251,78 @@ Even if you do not send `stream` or `enable_thinking`, the proxy will force both
 - This repo is not affiliated with OpenClaw, Alibaba Cloud, or Qwen
 - Best used on localhost or a trusted internal network
 
-## Publish to GitHub
+## Run as a service (Linux / systemd)
 
-Create a new repository, then run:
+You can run the proxy as a `systemd` service so it starts automatically on boot and restarts on failure.
+
+1. Create a service file (replace `/path/to/repo` and `youruser` with your actual values):
+
+```ini
+# /etc/systemd/system/openclaw-proxy.service
+[Unit]
+Description=OpenClaw Qwen Thinking Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/path/to/repo
+EnvironmentFile=-/path/to/repo/.env
+# .env must use KEY=VALUE lines (no `export`), e.g.:
+#   UPSTREAM_BASE_URL=https://coding-intl.dashscope.aliyuncs.com/v1
+#   HOST=127.0.0.1
+#   PORT=4000
+ExecStart=/path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Reload systemd and enable the service:
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPO_URL
-git push -u origin main
+sudo systemctl daemon-reload
+sudo systemctl enable openclaw-proxy
+sudo systemctl start openclaw-proxy
 ```
+
+3. Check the status:
+
+```bash
+sudo systemctl status openclaw-proxy
+```
+
+Logs are available via:
+
+```bash
+journalctl -u openclaw-proxy -f
+```
+
+## Schedule a daily restart with cron
+
+To restart the service every day at 2 am, add a cron entry to **root's crontab** (which does not require `sudo` inside the job itself):
+
+```bash
+sudo crontab -e
+```
+
+Add this line:
+
+```cron
+0 2 * * * systemctl restart openclaw-proxy
+```
+
+This triggers `systemctl restart openclaw-proxy` at 02:00 every day, which stops the current process and starts a fresh one.
+
+> **Tip:** If you are running the proxy without systemd (e.g. via a plain `uvicorn` invocation in a shell), you can use the cron approach below instead to kill and relaunch the process. Add this to the proxy-owning user's crontab (run `crontab -e` as that user, not as root), and replace `/path/to/repo` and `youruser` with your actual values:
+>
+> ```cron
+> 0 2 * * * pkill -u youruser -f "uvicorn main:app --host 127.0.0.1 --port 4000" ; sleep 2 ; cd /path/to/repo && /path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000 >> /home/youruser/logs/openclaw-proxy.log 2>&1 &
+> ```
+>
+> Make sure the log directory exists first: `mkdir -p /home/youruser/logs`
 
 ## References
 
