@@ -188,19 +188,6 @@ This triggers `systemctl restart openclaw-proxy` at 02:00 every day, which stops
 >
 > Make sure the log directory exists first: `mkdir -p ~/logs`
 
-## Publish to GitHub
-
-Create a new repository, then run:
-
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPO_URL
-git push -u origin main
-```
-
 ## License
 
 MIT
