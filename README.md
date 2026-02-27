@@ -136,6 +136,10 @@ Type=simple
 User=youruser
 WorkingDirectory=/path/to/repo
 EnvironmentFile=-/path/to/repo/.env
+# .env must use KEY=VALUE lines (no `export`), e.g.:
+#   UPSTREAM_BASE_URL=https://coding-intl.dashscope.aliyuncs.com/v1
+#   HOST=127.0.0.1
+#   PORT=4000
 ExecStart=/path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000
 Restart=on-failure
 RestartSec=5
@@ -175,18 +179,18 @@ sudo crontab -e
 Add this line:
 
 ```cron
-0 2 * * * /bin/systemctl restart openclaw-proxy
+0 2 * * * systemctl restart openclaw-proxy
 ```
 
 This triggers `systemctl restart openclaw-proxy` at 02:00 every day, which stops the current process and starts a fresh one.
 
-> **Tip:** If you are running the proxy without systemd (e.g. via a plain `uvicorn` invocation in a shell), you can use the cron approach below instead to kill and relaunch the process. Replace `/path/to/repo` and `youruser` with your actual values:
+> **Tip:** If you are running the proxy without systemd (e.g. via a plain `uvicorn` invocation in a shell), you can use the cron approach below instead to kill and relaunch the process. Add this to the proxy-owning user's crontab (run `crontab -e` as that user, not as root), and replace `/path/to/repo` and `youruser` with your actual values:
 >
 > ```cron
-> 0 2 * * * pkill -f "uvicorn main:app --host 127.0.0.1 --port 4000" ; sleep 2 ; cd /path/to/repo && /path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000 >> /home/youruser/logs/openclaw-proxy.log 2>&1 &
+> 0 2 * * * pkill -u youruser -f "uvicorn main:app --host 127.0.0.1 --port 4000" ; sleep 2 ; cd /path/to/repo && /path/to/repo/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4000 >> /home/youruser/logs/openclaw-proxy.log 2>&1 &
 > ```
 >
-> Make sure the log directory exists first: `mkdir -p ~/logs`
+> Make sure the log directory exists first: `mkdir -p /home/youruser/logs`
 
 ## License
 
