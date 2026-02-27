@@ -46,6 +46,7 @@ async def passthrough(req: Request) -> StreamingResponse:
     Behavior:
     - Forces stream=true
     - Forces enable_thinking=true
+    - Remaps 'developer' role to 'system' for upstream compatibility
     - Keeps the rest of the JSON payload as-is
     - Forwards headers with minimal changes
     """
