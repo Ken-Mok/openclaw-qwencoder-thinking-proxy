@@ -327,6 +327,10 @@ This triggers `systemctl restart openclaw-proxy` at 02:00 every day, which stops
 >
 > Make sure the log directory exists first: `mkdir -p /home/youruser/logs`
 
+## References
+
+- [Alibaba Cloud Model Studio – Qwen Coder API documentation](https://modelstudio.console.alibabacloud.com/ap-southeast-1/?tab=doc#/doc/?type=model&url=3005961)
+
 ## License
 
 MIT
