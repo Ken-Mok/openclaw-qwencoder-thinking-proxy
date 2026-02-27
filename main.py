@@ -46,6 +46,7 @@ async def passthrough(req: Request) -> StreamingResponse:
     Behavior:
     - Forces stream=true
     - Forces enable_thinking=true
+    - Remaps 'developer' role to 'system' for upstream compatibility
     - Keeps the rest of the JSON payload as-is
     - Forwards headers with minimal changes
     """
@@ -64,6 +65,12 @@ async def passthrough(req: Request) -> StreamingResponse:
     # Force the two flags that OpenClaw may not reliably send.
     body["stream"] = True
     body["enable_thinking"] = True
+
+    # Remap "developer" role to "system" for upstream compatibility.
+    if "messages" in body and isinstance(body["messages"], list):
+        for msg in body["messages"]:
+            if isinstance(msg, dict) and msg.get("role") == "developer":
+                msg["role"] = "system"
 
     patched_body = json.dumps(
         body,

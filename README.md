@@ -7,6 +7,8 @@ It keeps requests as transparent as possible, but **always forces**:
 - `stream = true`
 - `enable_thinking = true`
 
+It also remaps any `"developer"` role message to `"system"` for upstream compatibility.
+
 This is useful when your client can talk to an OpenAI-compatible endpoint, but does not reliably send `enable_thinking` for Qwen-compatible backends.
 
 ## What it does
@@ -15,6 +17,7 @@ This is useful when your client can talk to an OpenAI-compatible endpoint, but d
 - Reads the incoming JSON body
 - Forces `stream=true`
 - Forces `enable_thinking=true`
+- Remaps `"developer"` role messages to `"system"` for upstream compatibility
 - Forwards the rest of the payload with minimal changes
 - Returns the upstream response as SSE (`text/event-stream`)
 
